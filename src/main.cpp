@@ -2,7 +2,8 @@
 #include "My_Time_Config.h"         // MyClock class, used to easy get time from internal clock
 #include "MY_Lander_Display.h"      // Display class used to create a graphic output on display
 #include "My_Weather.h"             // Header of weatherData class, use to exctract data from raw
-#include "noblock_led.h"
+#include "My_Touchpad.h"            // used for touchpads functions
+#include "noblock_led.h"            // Class that introduce smooth led transition with non blocking code
 
 #include <TFT_eSPI.h>               // Graphics and font library for ST7735 driver chip
 #include <SPI.h>                    // https://github.com/Bodmer/TFT_eSPI/tree/master
@@ -20,14 +21,17 @@
 #define WIFI_PASSWORD   "WIFI_PASSWORD"
 #define LED_BUILTIN     2
 #define BACKLIGHT       16
+#define TOUCHPAD_1      32
+#define TOUCHPAD_2      33
 
 MyClock orologio;
-
-TFT_eSPI tft = TFT_eSPI();          // Invoke library, pins defined in User_Setup.h
+TFT_eSPI tft = TFT_eSPI();          //  Invoke library, pins defined in User_Setup.h
 Lander_Display Display (&tft);     
-Adafruit_BME680 bme;                // I2C
-JsonDocument doc;                   // https://registry.platformio.org/libraries/bblanchon/ArduinoJson/examples/StringExample/StringExample.ino
+Adafruit_BME680 bme;                //  I2C
+JsonDocument doc;                   //  https://registry.platformio.org/libraries/bblanchon/ArduinoJson/examples/StringExample/StringExample.ino
 nb_led backlight (BACKLIGHT);
+Touchpad pad1 (TOUCHPAD_1);
+Touchpad pad2 (TOUCHPAD_2);
 
 String openWeatherMapApiKey = "API-KEY";
 String city = "YOUR_CITY";
@@ -37,12 +41,13 @@ String langCode = "en";
 String serverPath = "http://api.openweathermap.org/data/2.5/weather?q=" + city + "," + countryCode + "&units=" + unitsCode + "&lang=" + langCode + "&APPID=" + openWeatherMapApiKey;
 String payload;                     // String to store rawdata got from weather API
 
-uint32_t color = 0xfba0;            // color of graphic and lines on DIsplay
-
-const int Period1 = 5000;           // Setting refresh sensor rate
+const int Period1 = 100;            // TouchPad refresh rate
 unsigned long StartMillis1 = 0;     
-const int Period2 = 1800000;        // Weather refresh rate [30m] 
-long int StartMillis2 = 0;
+const int Period2 = 5000;           // Sensor refresh rate
+unsigned long StartMillis2 = 0;     
+const int Period3 = 1800000;        // Weather refresh rate [30m] 
+long int StartMillis3 = 0;
+int brightness = 4;
 
 
 void setup() {
@@ -51,14 +56,17 @@ void setup() {
   pinMode(BACKLIGHT, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
   
-  //------------------------- Initialize sensor ---------------------------
+  //---------------------- Initialize sensor and Pads ------------------------
   bool status = bme.begin(0x77); 
   if (!status) {
-  Serial.println("Could not find a valid BMP280 sensor, check wiring!");
+  Serial.println("Could not find a valid BME680 sensor, check wiring!");
   //while (1);
   }
 
-  //-------------------------- wifi connection -----------------------------
+  pad1.initialise();
+  pad2.initialise();
+
+  //-------------------------- wifi connection -------------------------------
   WiFi.begin(WIFI_SSID,WIFI_PASSWORD);
   
   while (WiFi.status() != WL_CONNECTED) {;}    //block code until wifi connected
@@ -68,42 +76,89 @@ void setup() {
   orologio.WriteTime();           // terminal debug
   orologio.TUpdate();             // uodate class to real time
   
-  // ------------------------ Initialize screen -------------------------------
+  // ------------------------ Initialize screen ------------------------------
   Display.init();
   Display.timeup(orologio.exportStruct());
 
   digitalWrite(LED_BUILTIN, LOW);
-  backlight.toggle( true );
+  backlight.toggle();
 }
+
 
 void loop() {
 
-  //------------------ Action repeated every code cycle -----------------------
+  //------------------ Action repeated every code cycle ----------------------
   orologio.TUpdate();
   Display.timeup(orologio.exportStruct());
   backlight.run();
 
-  //----------------- protection against wfi disconnection --------------------
+  //----------------- protection against wfi disconnection -------------------
   if (WiFi.status() != WL_CONNECTED) {
     while (WiFi.status() != WL_CONNECTED) {digitalWrite(LED_BUILTIN, HIGH);}
     digitalWrite(LED_BUILTIN, LOW);
   }
   
-  //--------------- Protection against Millis() value reset -------------------
-  if (millis() < StartMillis1 || millis() < StartMillis2){    //protection against Millis() value reset
-    StartMillis1 = 0;
+  //--------------- Protection against Millis() value reset ------------------
+  if (millis() < StartMillis2 || millis() < StartMillis3){
     StartMillis2 = 0;
+    StartMillis3 = 0;
     Serial.println("Millis() reset");
   }
 
-  //------------------------- Sensor Refresh ---------------------------------
-  if (millis () - StartMillis1 > Period1) {
-    Display.measureup(bme.readTemperature(), bme.readPressure());
+  //----------------------- Touchpads Refresh --------------------------------
+   if (millis () - StartMillis1 > Period1) {
+    pad1.read();
+    pad2.read();
+
+    if(pad1.released() == true) {
+      switch (brightness){
+        case 4:
+          brightness = 3;
+          backlight.brightness(128);
+          //Serial.println("PATATE - Brightness changed 3");
+          break;
+        case 3:
+          brightness = 2;
+          backlight.brightness(63);
+          //Serial.println("PATATE - Brightness changed 2");
+          break;
+        case 2:
+        brightness = 1;
+          backlight.brightness(20);
+          //Serial.println("PATATE - Brightness changed 1");
+          break;
+        case 1:
+          brightness = 0;
+          backlight.brightness(0);
+          backlight.toggle();
+          //Serial.println("PATATE - Brightness changed 0");
+          break;
+        case 0:
+          brightness = 4;
+          backlight.brightness(255);
+          backlight.toggle();
+          Serial.println("PATATE - Brightness changed 4");
+          break;
+        default:
+          Serial.println("ERROR in Pad1 refresh action in MAIN");
+          break;
+      }
+    }
+
+    if(pad2.released() == true) {
+      Display.nextColor();
+    }
     StartMillis1 = millis();
+  }
+
+  //------------------------- Sensor Refresh ---------------------------------
+  if (millis () - StartMillis2 > Period2) {
+    Display.measureup(bme.readTemperature(), bme.readPressure());
+    StartMillis2 = millis();
   }
   
   //-------------------------- Weather update --------------------------------
-if (millis () - StartMillis2 > Period2 || StartMillis2 == 0) {
+if (millis () - StartMillis3 > Period3 || StartMillis3 == 0) {
     Serial.print("Weather update:");
     orologio.WriteTime();
 
@@ -127,6 +182,6 @@ if (millis () - StartMillis2 > Period2 || StartMillis2 == 0) {
     http.end();
 
     Display.weatherUp(payload);
-    StartMillis2 = millis();
+    StartMillis3 = millis();
   }
 }

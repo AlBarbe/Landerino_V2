@@ -13,53 +13,8 @@ class Lander_Display {
             tft->init();
             tft->setRotation(2);
             tft->fillScreen(TFT_BLACK);
-            
-            //clock
-            tft->drawWideLine(60, 24, 84, 48, 2, color, TFT_BLACK);
-            tft->fillRect(0, 0, 60, 25, color);
-            tft->fillRect(84, 47, 44, 2, color);
-            tft->fillTriangle(60, 0, 60, 24, 84, 0, color);
-            tft->setTextColor(TFT_BLACK);
-            tft->drawString(clock,2,0,4);
-
-            //roomPressure and roomTemperature
-            tft->drawWideLine(58, 67, 72, 81, 2, color, TFT_BLACK);
-            tft->fillRect(0, 67, 58, 2, color);
-            tft->fillRect(72, 81, 58, 2.5, color);
-
-            //sunrise
-            tft->drawArc(20, 153, 9, 7,90, 270, color, TFT_BLACK, true);
-            tft->fillRect(8, 154, 25, 2, color);
-
-            tft->drawLine(20, 140, 20, 134, color);
-            tft->drawLine(21, 140, 21, 134, color);
-
-            tft->drawLine(20,134,17,137,color);
-            tft->drawLine(20,133,17,136,color);
-
-            tft->drawLine(21,134,24,137,color);
-            tft->drawLine(21,133,24,136,color);
-
-            //sunset
-            tft->drawArc(63, 153, 9, 7,90, 270, color, TFT_BLACK, true);
-            tft->fillRect(51, 154, 25, 2, color);
-
-            tft->drawLine(63, 140, 63, 134, color);
-            tft->drawLine(64, 140, 64, 134, color);
-
-            tft->drawLine(63,140,60,137,color);
-            tft->drawLine(63,139,60,136,color);
-
-            tft->drawLine(64,140,67,137,color);
-            tft->drawLine(64,139,67,136,color);
-
-            //wwind
-            tft->fillRect(99, 144, 9, 2, color);
-            tft->drawArc(108,142, 3, 2,180,360,color,TFT_BLACK,true); 
-            tft->fillRect(96, 149, 16, 2, color);
-            tft->drawArc(112,152, 3, 2,180,360,color,TFT_BLACK,true); 
-            tft->fillRect(99, 154, 9, 2, color);
-        };
+            graphicUp();
+        }
         
         void tmstructup (struct tm buffer) {
             PresentTime = buffer;
@@ -85,7 +40,7 @@ class Lander_Display {
             tft->drawRightString(roomTemperature,64,38,4);
             tft->drawCircle(61, 41, 2, TFT_WHITE);
             tft->drawRightString(roomPressure,125,55,2);
-        };
+        }
 
         void timeup (struct tm buffer) {
             PresentTime = buffer;
@@ -104,7 +59,7 @@ class Lander_Display {
                 } else {
                     clock += ":" + String(PresentTime.tm_min);
                 }
-                tft->setTextColor(TFT_BLACK);
+                tft->setTextColor(clock_color);
                 tft->drawString(clock,2,0,4);
                 minute = PresentTime.tm_min;
             }
@@ -150,7 +105,57 @@ class Lander_Display {
             tft->drawRightString(wind, 113, 123, 1);
             tft->drawString("m",115,120,1);
             tft->drawString("s",118,128,1);
-        };
+        }
+
+        void graphicUp() {
+            //clock
+            tft->drawWideLine(60, 24, 84, 48, 2, color, TFT_BLACK);
+            tft->fillRect(0, 0, 60, 25, color);
+            tft->fillRect(84, 47, 44, 2, color);
+            tft->fillTriangle(60, 0, 60, 24, 84, 0, color);
+
+            //roomPressure and roomTemperature
+            tft->drawWideLine(58, 67, 72, 81, 2, color, TFT_BLACK);
+            tft->fillRect(0, 67, 58, 2, color);
+            tft->fillRect(72, 81, 58, 2.5, color);
+
+            //sunrise
+            tft->drawArc(20, 153, 9, 7,90, 270, color, TFT_BLACK, true);
+            tft->fillRect(8, 154, 25, 2, color);
+
+            tft->drawLine(20, 140, 20, 134, color);
+            tft->drawLine(21, 140, 21, 134, color);
+
+            tft->drawLine(20,134,17,137,color);
+            tft->drawLine(20,133,17,136,color);
+
+            tft->drawLine(21,134,24,137,color);
+            tft->drawLine(21,133,24,136,color);
+
+            //sunset
+            tft->drawArc(63, 153, 9, 7,90, 270, color, TFT_BLACK, true);
+            tft->fillRect(51, 154, 25, 2, color);
+
+            tft->drawLine(63, 140, 63, 134, color);
+            tft->drawLine(64, 140, 64, 134, color);
+
+            tft->drawLine(63,140,60,137,color);
+            tft->drawLine(63,139,60,136,color);
+
+            tft->drawLine(64,140,67,137,color);
+            tft->drawLine(64,139,67,136,color);
+
+            //wind
+            tft->fillRect(99, 144, 9, 2, color);
+            tft->drawArc(108,142, 3, 2,180,360,color,TFT_BLACK,true); 
+            tft->fillRect(96, 149, 16, 2, color);
+            tft->drawArc(112,152, 3, 2,180,360,color,TFT_BLACK,true); 
+            tft->fillRect(99, 154, 9, 2, color);
+
+            //restore clock
+            tft->setTextColor(clock_color);
+            tft->drawString(clock,2,0,4);
+        }
 
         void getWeather() {
             wind = String(wt.get_wind());
@@ -159,37 +164,77 @@ class Lander_Display {
             sunset = wt.get_sunset();
             cityTemperature = String(wt.get_temperature());
             cityHumidity = String(wt.get_humidity()) + " %";
-        };
+        }
 
         void setColor (uint32_t new_color) {
             color = new_color;
         }
 
+        void nextColor () {
+            switch (color_index)
+            {
+                case 0:
+                    color_index = 1;
+                    color = 0xc800;
+                    graphicUp();               
+                    break;
+                case 1:
+                    color_index = 2;
+                    color = TFT_VIOLET;
+                    graphicUp();
+                    break;
+                case 2:
+                    color_index = 4;
+                    color = TFT_SKYBLUE;
+                    graphicUp();
+                    break;
+                case 4:
+                    color_index = 5;
+                    color = 0x3fc8;
+                    graphicUp();
+                    break;
+                case 5:
+                    color_index = 6;
+                    color = TFT_YELLOW;
+                    graphicUp();
+                    break;
+                case 6:
+                    color_index = 0;
+                    color = 0xfcc0;
+                    graphicUp();
+                    break;
+                default:
+                break;
+            }
+        }
+
     private:
     
-        //-----Pointers----//
-    TFT_eSPI* tft;
-        //----Variables----//
-    weatherData wt;
-    struct tm PresentTime;
-    int day;
-    int minute;
-    uint32_t color = 0xfba0;
+            //-----Pointers----//
+        TFT_eSPI* tft;
+            //----Variables----//
+        weatherData wt;
+        struct tm PresentTime;
+        int day;
+        int minute;
+        uint32_t color = TFT_RED;
+        uint32_t clock_color = TFT_BLACK;
+        int color_index = 1;
         //-----clock-------//
-    String clock = "00:00";
-    String date = "00/00";
-    String year = "0000";
-        //-----Sensor------//
-    String roomTemperature = "00.0";
-    String roomPressure = "0.00 bar";
-        //-----Weather-----//
-    String city = "Naters";
-    String wind;
-    String description;
-    String sunrise = "0:00";
-    String sunset = "0:00";
-    String cityTemperature = "00.0";
-    String cityHumidity = "00%";
+        String clock = "00:00";
+        String date = "00/00";
+        String year = "0000";
+            //-----Sensor------//
+        String roomTemperature = "00.0";
+        String roomPressure = "0.00 bar";
+            //-----Weather-----//
+        String city = "Naters";
+        String wind;
+        String description;
+        String sunrise = "0:00";
+        String sunset = "0:00";
+        String cityTemperature = "00.0";
+        String cityHumidity = "00%";
 };
 
 #endif //__My_Lander_Display__
