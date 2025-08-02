@@ -87,7 +87,7 @@ class MyClock {
         struct tm MyTimeInfo;
         time_t now;
         int gmtOffset_sec = 3600;
-        int daylightOffset_sec = 0;
+        int daylightOffset_sec = 3600;
         char* server;
     };
     

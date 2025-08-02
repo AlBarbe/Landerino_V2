@@ -59,9 +59,15 @@ void setup() {
   //---------------------- Initialize sensor and Pads ------------------------
   bool status = bme.begin(0x77); 
   if (!status) {
-  Serial.println("Could not find a valid BME680 sensor, check wiring!");
-  //while (1);
+    Serial.println("Could not find a valid BME680 sensor, check wiring!");
+    //while (1);
   }
+  
+  bme.setTemperatureOversampling(BME680_OS_8X); // Set up oversampling and filter initialization
+  bme.setHumidityOversampling(BME680_OS_2X);
+  bme.setPressureOversampling(BME680_OS_4X);
+  bme.setIIRFilterSize(BME680_FILTER_SIZE_3);
+  bme.setGasHeater(320, 150); // 320*C for 150 ms
 
   pad1.initialise();
   pad2.initialise();
@@ -137,7 +143,7 @@ void loop() {
           brightness = 4;
           backlight.brightness(255);
           backlight.toggle();
-          Serial.println("PATATE - Brightness changed 4");
+          //Serial.println("PATATE - Brightness changed 4");
           break;
         default:
           Serial.println("ERROR in Pad1 refresh action in MAIN");
@@ -153,12 +159,12 @@ void loop() {
 
   //------------------------- Sensor Refresh ---------------------------------
   if (millis () - StartMillis2 > Period2) {
-    Display.measureup(bme.readTemperature(), bme.readPressure());
+    Display.measureup(bme.readTemperature(), bme.readPressure(), bme.readHumidity(), bme.readGas());
     StartMillis2 = millis();
   }
   
   //-------------------------- Weather update --------------------------------
-if (millis () - StartMillis3 > Period3 || StartMillis3 == 0) {
+  if (millis () - StartMillis3 > Period3 || StartMillis3 == 0) {
     Serial.print("Weather update:");
     orologio.WriteTime();
 
@@ -174,7 +180,7 @@ if (millis () - StartMillis3 > Period3 || StartMillis3 == 0) {
       // file found at server
       if(httpCode == HTTP_CODE_OK) {
         payload = http.getString();
-        Serial.println(payload);
+        //Serial.println(payload);      //Debug check raw data payload in terminal
       }
     } else {
       Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());

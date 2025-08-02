@@ -28,6 +28,7 @@ class weatherData {
       String bufMain = doc["main"].as<String>();
       String bufWind = doc["wind"].as<String>();
       String bufSys = doc["sys"].as<String>();
+      city = doc["name"].as<String>();
 
       deserializeJson(doc, bufMain);
       temperature = doc["temp"].as<float>();
@@ -54,6 +55,8 @@ class weatherData {
       Serial.println(Sunset);
       Serial.print ("description :");
       Serial.println(description);
+      Serial.print ("city :");
+      Serial.println(city);
     }
 
     //------- get data functions ------//
@@ -61,6 +64,7 @@ class weatherData {
     String get_sunrise() { return Sunrise; };
     String get_sunset() { return Sunset; };
     String get_description() { return description; };
+    String get_city() { return city; };
     float get_temperature() { return temperature; };
     int get_humidity() { return humidity; };
 
@@ -69,6 +73,7 @@ class weatherData {
     String Sunrise;
     String Sunset;
     String description;
+    String city;
     float temperature;
     int humidity;
 
@@ -89,8 +94,5 @@ class weatherData {
       }
     }
 };
-
-
-
 
 #endif //__my_Weather__

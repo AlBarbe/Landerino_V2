@@ -13,6 +13,7 @@ class Lander_Display {
             tft->init();
             tft->setRotation(2);
             tft->fillScreen(TFT_BLACK);
+
             graphicUp();
         }
         
@@ -20,10 +21,13 @@ class Lander_Display {
             PresentTime = buffer;
         }
 
-        void measureup (float temp, float pres) {
+        void measureup (float temp, float pres, float humi, uint32_t gas) {        //Getting data and storing them as string, to make just one conversion and easy screen refresh
             tft->setTextColor(TFT_BLACK);
-            tft->drawRightString(roomTemperature,64, 38 ,4);
-            tft->drawRightString(roomPressure,125,55,2);
+            tft->drawRightString(roomTemperature,64, 34 ,4);
+            tft->drawRightString(roomHumidity,61, 61 ,2);
+            tft->drawRightString(roomPressure,125,50,2);
+            //tft->drawRightString(roomGas,125, 50 ,2);
+
             roomTemperature = String ( ((round (temp*10.f))/10.f) );
                 if (roomTemperature.length() == 5) {
                     roomTemperature.remove(4, 1);
@@ -36,10 +40,22 @@ class Lander_Display {
                     //roomPressure.remove (6,3);
                 }
                 roomPressure += " bar";
+            roomHumidity = String(humi);
+                //if (roomHumidity.length() == 4) {
+                    //roomPressure.remove (6,3);
+                //}
+                roomHumidity += " %";
+            roomGas = String(gas/1000);
+                //if (roomHumidity.length() == 4) {
+                    //roomPressure.remove (6,3);
+                //}
+                roomGas += " KO";
             tft->setTextColor(TFT_WHITE);
-            tft->drawRightString(roomTemperature,64,38,4);
+            tft->drawRightString(roomTemperature,64, 34 ,4);
             tft->drawCircle(61, 41, 2, TFT_WHITE);
-            tft->drawRightString(roomPressure,125,55,2);
+            tft->drawRightString(roomHumidity,61, 61 ,2);
+            //tft->drawRightString(roomGas,125, 50 ,2);
+            tft->drawRightString(roomPressure,125,50,2);
         }
 
         void timeup (struct tm buffer) {
@@ -84,27 +100,37 @@ class Lander_Display {
 
         void weatherUp(String rawData) {
             tft->setTextColor(TFT_BLACK);
-            tft->drawRightString(cityTemperature, 47, 79, 2);
-            tft->drawCircle(51, 83, 2, TFT_BLACK);
-            tft->drawRightString("Naters",118, 85, 2);
+            tft->drawCircle(122, 83, 2, TFT_BLACK);
             tft->drawCentreString(description, 64, 106, 1);
             tft->drawString(sunrise, 10, 123, 1);
             tft->drawString(sunset, 49, 123, 1);
             tft->drawRightString(wind, 113, 123, 1);
             tft->drawString("m",115,120,1);
             tft->drawString("s",118,128,1);
+            if (city.length() > 7) {
+                tft->drawCentreString(city,36, 90, 1);
+                tft->drawRightString(cityTemperature, 120, 77, 4);
+            } else {
+                tft->drawCentreString(city,34, 86, 2);
+                tft->drawRightString(cityTemperature, 118, 77, 4);
+            }
             wt.extractData(rawData);
             getWeather ();
             tft->setTextColor(TFT_WHITE);
-            tft->drawRightString(cityTemperature, 47, 79, 2);
-            tft->drawCircle(51, 83, 2, TFT_WHITE);
-            tft->drawRightString("Naters",118, 85, 2);
+            tft->drawCircle(122, 83, 2, TFT_WHITE);
             tft->drawCentreString(description, 64, 106, 1);
             tft->drawString(sunrise, 10, 123, 1);
             tft->drawString(sunset, 49, 123, 1);
             tft->drawRightString(wind, 113, 123, 1);
             tft->drawString("m",115,120,1);
             tft->drawString("s",118,128,1);
+            if (city.length() > 7) {
+                tft->drawCentreString(city,36, 90, 1);
+                tft->drawRightString(cityTemperature, 120, 77, 4);
+            } else {
+                tft->drawCentreString(city,34, 86, 2);
+                tft->drawRightString(cityTemperature, 118, 77, 4);
+            }
         }
 
         void graphicUp() {
@@ -115,9 +141,9 @@ class Lander_Display {
             tft->fillTriangle(60, 0, 60, 24, 84, 0, color);
 
             //roomPressure and roomTemperature
-            tft->drawWideLine(58, 67, 72, 81, 2, color, TFT_BLACK);
-            tft->fillRect(0, 67, 58, 2, color);
-            tft->fillRect(72, 81, 58, 2.5, color);
+            tft->drawWideLine(72, 67, 58, 81, 2, color, TFT_BLACK);
+            tft->fillRect(72, 67, 58, 2, color);
+            tft->fillRect(0, 81, 58, 2.5, color);
 
             //sunrise
             tft->drawArc(20, 153, 9, 7,90, 270, color, TFT_BLACK, true);
@@ -158,11 +184,17 @@ class Lander_Display {
         }
 
         void getWeather() {
+            city = String(wt.get_city());
             wind = String(wt.get_wind());
             description = wt.get_description();
             sunrise = wt.get_sunrise();
             sunset = wt.get_sunset();
             cityTemperature = String(wt.get_temperature());
+            if (cityTemperature.length() == 5) {
+                cityTemperature.remove(4, 1);
+            } else if ( cityTemperature.length() == 4 ) {
+                cityTemperature.remove(3, 1);
+            }
             cityHumidity = String(wt.get_humidity()) + " %";
         }
 
@@ -227,8 +259,10 @@ class Lander_Display {
             //-----Sensor------//
         String roomTemperature = "00.0";
         String roomPressure = "0.00 bar";
+        String roomHumidity = "0.00 %";
+        String roomGas = "0.00 KO";
             //-----Weather-----//
-        String city = "Naters";
+        String city = "PATATE";
         String wind;
         String description;
         String sunrise = "0:00";
